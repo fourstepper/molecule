@@ -7,7 +7,7 @@ WORKDIR /usr/src/molecule
 # * Breaks security scanning due to https://github.com/quay/clair/issues/901
 # * Unreliable builds, as alpinelinux CDN is unreliable for edge, returning 404
 #   quite often.
-# edge/testing needed for: py3-arrow py3-tabulate
+# edge/testing needed for: py3-arrow
 RUN apk add -v --progress --update --no-cache \
 docker-py \
 gcc \
@@ -67,7 +67,6 @@ molecule-docker \
 molecule-digitalocean \
 molecule-ec2 \
 molecule-gce \
-molecule-hetznercloud \
 molecule-libvirt \
 molecule-lxd \
 molecule-podman \
@@ -76,14 +75,13 @@ molecule-vagrant \
 "
 
 # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=917006
-RUN PIP_USE_FEATURE=2020-resolver python3 -m pip install -U wheel pip setuptools
+RUN python3 -m pip install -U wheel pip setuptools
 
 ADD . .
 
 RUN \
-PIP_USE_FEATURE=2020-resolver \
 python3 -m pip wheel \
--w dist --no-build-isolation \
+-w dist \
 ".[${MOLECULE_EXTRAS}]" testinfra ${MOLECULE_PLUGINS}
 
 RUN ls -1 dist/
@@ -166,7 +164,6 @@ molecule-docker \
 molecule-digitalocean \
 molecule-ec2 \
 molecule-gce \
-molecule-hetznercloud \
 molecule-libvirt \
 molecule-lxd \
 molecule-openstack \
@@ -186,24 +183,12 @@ COPY --from=molecule-builder \
 /usr/src/molecule/dist
 
 RUN \
-PIP_USE_FEATURE=2020-resolver \
 python3 -m pip install \
 ${PIP_INSTALL_ARGS} \
 "molecule[${MOLECULE_EXTRAS}]" testinfra ${MOLECULE_PLUGINS} && \
 molecule --version && \
-molecule drivers | grep azure && \
-molecule drivers | grep containers && \
-molecule drivers | grep digitalocean && \
-molecule drivers | grep docker && \
-molecule drivers | grep ec2 && \
-molecule drivers | grep gce && \
-molecule drivers | grep hetznercloud && \
-molecule drivers | grep libvirt && \
-molecule drivers | grep lxd && \
-molecule drivers | grep openstack && \
-molecule drivers | grep podman && \
-molecule drivers | grep vagrant && \
-true
+molecule drivers && \
+pip check
 # running molecule commands adds a minimal level fail-safe about build success
 
 ENV SHELL /bin/bash
